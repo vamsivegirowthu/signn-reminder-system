@@ -844,12 +844,20 @@ async function loadTemplates() {
   const list = document.getElementById('template-list');
   list.innerHTML = '';
 
-  data.templates.forEach(t => {
-    const div = document.createElement('div');
-    div.innerHTML = `<b>${t.name}</b><br>${t.message}`;
-    list.appendChild(div);
-  });
-}
+  const templates = Array.isArray(data) ? data : data.templates;
+
+templates.forEach(t => {
+  const div = document.createElement('div');
+
+  div.innerHTML = `
+    <div style="padding:10px;border-bottom:1px solid #eee">
+      <b>${t.name}</b><br>
+      ${t.message}
+    </div>
+  `;
+
+  list.appendChild(div);
+});
 
 let selectedImage = '';
 
