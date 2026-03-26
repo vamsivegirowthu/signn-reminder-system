@@ -49,7 +49,9 @@ const tempScheduler = {
 
 const PORT = parseInt(process.env.PORT || '3000');
 const { httpServer, io } = createDashboardServer({ scheduler: tempScheduler, tracker, clinicData, logger });
-httpServer.listen(PORT, () => logger.info(`🖥️  Dashboard → http://localhost:${PORT}`));
+httpServer.listen(PORT, '0.0.0.0', () => {
+  logger.info(`Server running on port ${PORT}`);
+});
 
 logger.info('🔐 Initializing WhatsApp...');
 logger.info('📱 Open dashboard to scan QR code');
@@ -89,8 +91,8 @@ waClient.onReady = async () => {
   logger.info('');
   logger.info('═══════════════════════════════════════════════');
   logger.info('  ✅  Signn Reminder System is LIVE!');
- logger.info("📤 WhatsApp Ready");
-  logger.info(`  🖥️   Dashboard: http://localhost:${PORT}`);
+  logger.info("📤 WhatsApp Ready");
+  logger.info(`  🖥️   Dashboard running on port ${PORT}`);
   logger.info(`  📅  ${reminders.filter(r=>r.enabled).length} reminder(s) scheduled`);
   logger.info('═══════════════════════════════════════════════');
 };
