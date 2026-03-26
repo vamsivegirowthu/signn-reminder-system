@@ -837,36 +837,17 @@ socket.on('activity', entries => { (Array.isArray(entries) ? [...entries].revers
 socket.on('scan_update', fetchSummary);
 socket.on('reset', () => { toast('↺ Day reset','info'); fetchSummary(); });
 
-loadTemplates();
-
 async function loadTemplates() {
   const res = await fetch('/api/templates');
   const data = await res.json();
 
   const list = document.getElementById('template-list');
-
-list.innerHTML = '';
-
-data.templates.forEach(t => {
-  const div = document.createElement('div');
-
-  div.innerHTML = `
-    <b>${t.name}</b><br>
-    ${t.message}
-  `;
-
-  list.appendChild(div);
-});
-
-  const select = document.getElementById('template-select');
-
-  select.innerHTML = '<option value="">Select Template</option>';
+  list.innerHTML = '';
 
   data.templates.forEach(t => {
-    const opt = document.createElement('option');
-    opt.value = t.id;
-    opt.textContent = t.name;
-    select.appendChild(opt);
+    const div = document.createElement('div');
+    div.innerHTML = `<b>${t.name}</b><br>${t.message}`;
+    list.appendChild(div);
   });
 }
 
@@ -1730,22 +1711,7 @@ let templates = [];
 
 // LOAD TEMPLATES
 // ================= TEMPLATE LOAD =================
-async function loadTemplates() {
-  const res = await fetch('/api/templates');
-  const data = await res.json();
-
-  const select = document.getElementById('template-select');
-  if (!select) return;
-
-  select.innerHTML = '<option value="">Select Template</option>';
-
-  data.templates.forEach(t => {
-    const option = document.createElement('option');
-    option.value = t.id;
-    option.textContent = t.name;
-    select.appendChild(option);
-  });
-}
+  loadTemplates();
 
 // ================= AUTO FILL MESSAGE =================
 document.addEventListener('DOMContentLoaded', () => {
