@@ -33,8 +33,10 @@ tracker.initializeClinics(clinicData.clinics);
 
 const waClient = new WhatsAppClient(logger);
 
+// ✅ FIXED TEMP SCHEDULER
 const tempScheduler = {
-  wa: waClient,
+  wa: waClient,   // 🔥 FIX
+
   getStats: () => ({}),
   getActivityLog: () => [],
   sendMorningReminders:  async () => ({ error: 'Not ready' }),
@@ -52,15 +54,18 @@ httpServer.listen(PORT, () => logger.info(`🖥️  Dashboard → http://localho
 logger.info('🔐 Initializing WhatsApp...');
 logger.info('📱 Open dashboard to scan QR code');
 
-waClient.onQR = qr => io.emit('qr_update', { qr });
+waClient.onQR = qr => {
+  global.latestQR = qr;
+  io.emit('qr_update', { qr });
+};
 
-waClient.onReady = () => {
+waClient.onReady = async () => {
   io.emit('wa_connected', { time: new Date().toISOString() });
 
   const scheduler = new ReminderScheduler({ waClient, scanTracker: tracker, clinicData, logger, io });
   scheduler.io = io;
 
-  // Hot-patch tempScheduler
+  // ✅ FINAL FIX
   Object.assign(tempScheduler, {
     sendMorningReminders:  (...a) => scheduler.sendMorningReminders(...a),
     sendFollowupReminders: (...a) => scheduler.sendFollowupReminders(...a),
@@ -69,9 +74,12 @@ waClient.onReady = () => {
     getStats:              ()     => scheduler.getStats(),
     getActivityLog:        (...a) => scheduler.getActivityLog(...a),
     emitDashboardUpdate:   ()     => scheduler.emitDashboardUpdate(),
-    wa: waClient,
+
+    wa: waClient,   // 🔥 FIX
+
     io,
   });
+
   tempScheduler.io = io;
 
   const reminders = JSON.parse(fs.readFileSync(SCHEDULE_FILE,'utf8')).reminders;
@@ -81,6 +89,7 @@ waClient.onReady = () => {
   logger.info('');
   logger.info('═══════════════════════════════════════════════');
   logger.info('  ✅  Signn Reminder System is LIVE!');
+ logger.info("📤 WhatsApp Ready");
   logger.info(`  🖥️   Dashboard: http://localhost:${PORT}`);
   logger.info(`  📅  ${reminders.filter(r=>r.enabled).length} reminder(s) scheduled`);
   logger.info('═══════════════════════════════════════════════');

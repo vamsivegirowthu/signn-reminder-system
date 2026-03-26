@@ -24,6 +24,15 @@ class WhatsAppClient {
   }
 
   async initialize() {
+
+    // 🔥 FIX: clean old socket (avoid conflicts)
+    if (this.sock) {
+      try {
+        await this.sock.logout();
+      } catch {}
+      this.sock = null;
+    }
+
     if (!fs.existsSync(SESSION_DIR)) {
       fs.mkdirSync(SESSION_DIR, { recursive: true });
     }
@@ -38,8 +47,12 @@ class WhatsAppClient {
       logger: silentLogger,
       auth: state,
       browser: ['Signn Reminder', 'Chrome', '1.0.0'],
+
       connectTimeoutMs: 60000,
-      keepAliveIntervalMs: 30000,
+      keepAliveIntervalMs: 20000,     // 🔥 improved
+      defaultQueryTimeoutMs: 60000,
+      retryRequestDelayMs: 2000,
+      maxRetries: 5
     });
 
     this.sock.ev.on('creds.update', saveCreds);
@@ -47,27 +60,37 @@ class WhatsAppClient {
     this.sock.ev.on('connection.update', (update) => {
       const { connection, lastDisconnect, qr } = update;
 
+      // ✅ QR
       if (qr) {
         this.qrCode = qr;
         this.logger.info('📱 QR Code generated');
         if (this.onQR) this.onQR(qr);
       }
 
+      // ❌ DISCONNECT HANDLING (FIXED)
       if (connection === 'close') {
         const statusCode = new Boom(lastDisconnect?.error)?.output?.statusCode;
-        const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+
+        this.logger.warn(`⚠️ Connection closed. Code: ${statusCode}`);
         this.isConnected = false;
 
-        if (shouldReconnect) {
-          setTimeout(() => this.initialize(), 5000);
-        } else {
+        if (statusCode === DisconnectReason.loggedOut) {
+          this.logger.error('❌ Logged out from WhatsApp!');
           if (this.onDisconnect) this.onDisconnect('logged_out');
+        } else {
+          this.logger.info('🔄 Reconnecting in 3 seconds...');
+          setTimeout(() => this.initialize(), 3000);
         }
-      } else if (connection === 'open') {
+      }
+
+      // ✅ CONNECTED
+      else if (connection === 'open') {
         this.isConnected = true;
         this.qrCode = null;
+
         this.logger.info('✅ WhatsApp connected!');
         if (this.onReady) this.onReady();
+
         this.processQueue();
       }
     });
@@ -83,10 +106,10 @@ class WhatsAppClient {
     return `${number}@s.whatsapp.net`;
   }
 
-  // 🔥 UPDATED FUNCTION (IMAGE + TEXT)
+  // 🔥 IMAGE + TEXT SEND
   async sendMessage(phone, message, retries = 3) {
     const jid = this.formatNumber(phone);
-    const imagePath = './public/phani.jpg'; // 👈 image path
+    const imagePath = './public/phani.jpg';
 
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {

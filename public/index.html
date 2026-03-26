@@ -231,6 +231,7 @@ select.form-input{cursor:pointer}
     <button class="nav-item" data-page="pending"><span class="nav-icon">△</span> Pending Scans <span class="nav-badge" id="pending-badge">0</span></button>
     <button class="nav-item" data-page="messages"><span class="nav-icon">◻</span> Message Logs</button>
     <button class="nav-item" data-page="sessions"><span class="nav-icon">◉</span> WA Sessions</button>
+    <button class="nav-item" data-page="templates"><span class="nav-icon">📝</span> Reminder Templates</button>
 
     <div class="nav-section" style="margin-top:.5rem">Analytics</div>
     <button class="nav-item" data-page="reports"><span class="nav-icon">▦</span> Reports</button>
@@ -434,13 +435,113 @@ select.form-input{cursor:pointer}
 
 <!-- WA SESSIONS -->
 <div class="page" id="page-sessions">
+
+  <h2>Reminder Templates</h2>
+
+  <input id="temp-name" placeholder="Template Name" />
+  <br><br>
+
+  <textarea id="temp-message" placeholder="Message"></textarea>
+  <br><br>
+
+  <button onclick="saveTemplate()">Save Template</button>
+
+  <hr>
+
+  <div id="template-list"></div>
+
+  <!-- HEADER FIRST -->
   <div class="page-hdr-row page-header">
-    <div><div class="page-heading">WhatsApp Sessions</div><div class="page-sub">Manage and monitor WhatsApp integration sessions.</div></div>
+    <div>
+      <div class="page-heading">WhatsApp Sessions</div>
+      <div class="page-sub">Manage and send WhatsApp messages.</div>
+    </div>
     <button class="btn btn-primary" onclick="showQR()">⏻ New Session</button>
   </div>
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem" id="sessions-grid">
-    <!-- filled dynamically -->
+
+  <!-- SEND WHATSAPP -->
+  <div class="card" style="margin-bottom:1rem">
+    <div class="card-header">
+      <div class="card-title">📤 Send WhatsApp Message</div>
+    </div>
+
+    <div class="card-body">
+
+      <!-- NUMBER -->
+      <div class="form-group">
+        <label class="form-label">WhatsApp Number</label>
+        <input id="wa-number" class="form-input" placeholder="919876543210">
+      </div>
+
+      <!-- TEMPLATE -->
+      <div class="form-group">
+        <label class="form-label">Select Template</label>
+        <select class="form-input" id="template-select" onchange="onTemplateChange(this.value)"></select>
+      </div>
+
+      <!-- MESSAGE -->
+      <div class="form-group">
+        <label class="form-label">Message</label>
+        <textarea id="message-text" class="form-input" rows="4"></textarea>
+         <img id="template-image" style="width:200px; display:none; margin-top:10px;">
+      </div>
+
+      <!-- IMAGE -->
+<div class="form-group">
+  <label class="form-label">Select Image</label>
+
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+
+  <img src="/images/alert.jpg" width="70"
+  onclick="openTemplatePopup(this, 'Alert', '🚨 Important alert\nImmediate action required')">
+
+  <img src="/images/custom.jpg" width="70"
+  onclick="openTemplatePopup(this, 'Custom', '✏ Custom message\nEnter your text')">
+
+  <img src="/images/end.jpg" width="70"
+  onclick="openTemplatePopup(this, 'Shift End', '⏰ Your shift has ended\nPlease logout properly')">
+
+  <img src="/images/followup.jpg" width="70"
+  onclick="openTemplatePopup(this, 'Follow Up', '📌 Follow up reminder\nPlease complete pending task')">
+
+  <img src="/images/meeting.jpg" width="70"
+  onclick="openTemplatePopup(this, 'Meeting', '📅 Meeting reminder\nPlease join on time')">
+
+  <img src="/images/morning.jpg" width="70"
+  onclick="openTemplatePopup(this, 'Morning', '🌅 Good morning!\nHave a great day')">
+
+  <img src="/images/payment.jpg" width="70"
+  onclick="openTemplatePopup(this, 'Payment', '💰 Payment reminder\nPlease complete your payment')">
+
+  <img src="/images/report.jpg" width="70"
+  onclick="openTemplatePopup(this, 'Report', '📊 Submit your report\nDeadline approaching')">
+
+  <img src="/images/start.jpg" width="70"
+  onclick="openTemplatePopup(this, 'Shift Start', '▶ Shift started\nHave a productive day')">
+
+  <img src="/images/task.jpg" width="70"
+  onclick="openTemplatePopup(this, 'Task', '📝 Task assigned\nPlease complete it')">
   </div>
+
+</div>
+
+  <br>
+
+  <!-- preview -->
+  <img id="selected-image" style="width:200px;display:none;">
+  </div>
+      </div>
+
+      <!-- BUTTON -->
+      <button class="btn btn-success" onclick="sendWhatsApp()">Send Message</button>
+
+    </div>
+  </div>
+
+  <!-- SESSIONS GRID -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem" id="sessions-grid">
+  </div>
+
 </div>
 
 <!-- REPORTS -->
@@ -704,7 +805,11 @@ function setWaStatus(status, label) {
 }
 
 // ── SOCKET ───────────────────────────────────────────────────────────────────
-socket.on('connect', fetchAll);
+socket.on('connect', () => {
+  fetchAll();
+  loadTemplates(); // 🔥 VERY IMPORTANT
+});
+setInterval(fetchStatus, 5000);
 socket.on('wa_connected', () => { setWaStatus('connected','✓ Connected'); closeModal('qr-modal'); toast('✅ WhatsApp connected!','success'); });
 socket.on('wa_disconnected', d => { setWaStatus('disconnected','✗ Disconnected'); toast('⚠️ WA disconnected','error'); });
 socket.on('qr_update', () => { setWaStatus('connecting','Scan QR Code'); showQR(); clearInterval(window._qrTimer); window._qrTimer = setInterval(() => { const img=document.getElementById('qr-img'); img.src='/api/qr?t='+Date.now(); }, 20000); });
@@ -715,6 +820,138 @@ socket.on('schedule_updated', d => { scheduleData=d; renderRemindersPage(); });
 socket.on('activity', entries => { (Array.isArray(entries) ? [...entries].reverse() : [entries]).forEach(e => { activityLog.unshift(e); messageLogs.unshift(e); }); });
 socket.on('scan_update', fetchSummary);
 socket.on('reset', () => { toast('↺ Day reset','info'); fetchSummary(); });
+
+loadTemplates();
+
+async function loadTemplates() {
+  const res = await fetch('/api/templates');
+  const data = await res.json();
+
+  const select = document.getElementById('template-select');
+
+  select.innerHTML = '<option value="">Select Template</option>';
+
+  data.templates.forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t.id;
+    opt.textContent = t.name;
+    select.appendChild(opt);
+  });
+}
+
+let selectedImage = '';
+
+function selectImage(img) {
+  selectedImage = window.location.origin + img.getAttribute('src');
+
+  const preview = document.getElementById('selected-image');
+  preview.src = selectedImage;
+  preview.style.display = 'block';
+}
+
+function openTemplatePopup(img, subject, message) {
+  // popup open
+  document.getElementById('popup').style.display = 'block';
+
+  // image set
+  document.getElementById('templateImage').src = img.src;
+  document.getElementById('templateImage').style.height = "180px";
+  document.getElementById('templateImage').style.width = "300px";
+  document.getElementById('templateImage').style.objectFit = "cover";
+
+  // title set
+  document.getElementById('templateName').innerText = subject;
+
+  // message preview (WhatsApp style)
+  document.getElementById('previewBox').innerHTML = `
+  <div style="
+    background:#0f3d2e;
+    color:white;
+    padding:15px;
+    border-radius:12px;
+    width:300px;
+    height:180px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+  ">
+    
+    <div style="font-size:16px;font-weight:bold;">
+      ${subject}
+    </div>
+
+    <div style="margin-top:10px; overflow:hidden;">
+      ${message.replace(/\n/g, '<br>')}
+    </div>
+
+    <div style="margin-top:10px; overflow:hidden;">
+      📍 Name: User <br>
+      ⏰ Time: ${new Date().toLocaleTimeString()}
+    </div>
+
+    <div style="margin-top:10px; overflow:hidden;">
+      🚨 Please complete immediately
+    </div>
+
+  </div>
+`;
+}
+
+function closePopup() {
+  document.getElementById('popup').style.display = 'none';
+}
+
+async function sendFromPopup() {
+  let number = document.getElementById('popup-number').value;
+
+  if (!number.includes("@")) {
+    number = number + "@s.whatsapp.net";
+  }
+
+  const message = document.getElementById('previewBox').innerText;
+  const image = document.getElementById('templateImage').src;
+  const time = document.getElementById('popup-time').value;
+
+  const finalMessage = message + `\n\n⏰ Scheduled Time: ${time}`;
+
+  const res = await fetch('http://localhost:3000/api/send', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      number,
+      message: finalMessage,
+      image
+    })
+  });
+
+  const data = await res.json();
+
+  if (data.success) {
+    alert('✅ Sent');
+  } else {
+    alert('❌ Error: ' + data.error);
+    console.log(data);
+  }
+}
+
+  async function onTemplateChange(id) {
+  if (!id) return;
+
+  const res = await fetch('/api/templates/' + id);
+  const t = await res.json();
+
+  document.getElementById('message-text').value = t.message || '';
+
+  const img = document.getElementById('template-image');
+  if (t.image) {
+    img.src = t.image;
+    img.style.display = 'block';
+  } else {
+    img.style.display = 'none';
+  }
+}
 
 // ── DATA FETCH ───────────────────────────────────────────────────────────────
 async function fetchAll() {
@@ -1314,6 +1551,250 @@ function showQR() {
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
 setInterval(fetchAll, 30000);
+loadTemplates();
+function sendWhatsApp() {
+  const image = selectedImage;
+  const number = document.getElementById('wa-number').value;
+  const message = document.getElementById('message-text').value;
+
+  if (!number || !message) {
+    alert('Enter number and message');
+    return;
+  }
+
+  fetch('/api/send-message', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ number: number, message: message })
+  })
+  .then(res => res.json())
+  .then(data => {
+    alert('Message Sent ✅');
+  })
+  .catch(err => {
+    alert('Error ❌');
+    console.log(err);
+  });
+}
+
+async function onTemplateChange(id) {
+  if (!id) return;
+
+  try {
+    const res = await fetch('/api/templates/' + id);
+    const t = await res.json();
+
+    console.log("Template:", t);
+
+    // message fill
+    document.getElementById('message-text').value = t.message || '';
+
+    // image show
+    const img = document.getElementById('template-image');
+
+    if (t.image) {
+      img.src = t.image;
+      img.style.display = 'block';
+    } else {
+      img.style.display = 'none';
+    }
+
+  } catch (err) {
+    console.error(err);
+  }
+}
 </script>
+
+<!-- POPUP START -->
+<div id="popup" style="display:none; position:fixed; top:20%; left:30%; background:#fff; padding:20px; border-radius:10px; width:300px;">
+
+  <h3 id="templateName"></h3>
+
+  <img id="templateImage" src="" width="100%" />
+
+  <div id="previewBox"></div>
+
+  <input type="time" id="scheduleTime" />
+
+  <input type="text" id="number" placeholder="Enter Number" />
+
+  <br><br>
+
+  <button onclick="sendFromPopup()">Send</button>
+  <button onclick="closePopup()">Close</button>
+
+</div>
+<!-- POPUP END -->
+
+<!-- TEMPLATE POPUP -->
+<div id="template-popup" style="display:none; position:fixed; top:20%; left:35%; background:white; padding:20px; border-radius:10px; width:320px; box-shadow:0 0 10px rgba(0,0,0,0.2); z-index:999;">
+
+  <h3>Send Template</h3>
+
+  <img id="popup-image" src="" width="100%" style="border-radius:8px; margin-bottom:10px;" />
+
+  <input id="popup-subject" placeholder="Subject" style="width:100%; margin-bottom:10px;" />
+
+  <textarea id="popup-message" placeholder="Message" style="width:100%; margin-bottom:10px;"></textarea>
+
+  <input id="popup-number" placeholder="Enter Number" style="width:100%; margin-bottom:10px;" />
+
+  <input type="time" id="popup-time" style="width:100%; margin-bottom:10px;" />
+
+  <button onclick="sendFromPopup()">Send</button>
+  <button onclick="closePopup()">Close</button>
+
+</div>
+
+<div id="popup" style="display:none; position:fixed; top:10%; left:50%; transform:translateX(-50%);
+background:white; padding:20px; border-radius:10px; z-index:1000; width:350px;">
+
+  <h3 id="templateName"></h3>
+
+  <img id="templateImage" style="width:100%; margin-bottom:10px;">
+
+  <div id="previewBox"></div>
+
+  <br>
+
+  <input id="popup-number" placeholder="Enter WhatsApp Number">
+  <br><br>
+
+  <input id="popup-time" type="time">
+  <br><br>
+
+  <button onclick="sendFromPopup()">Send</button>
+  <button onclick="closePopup()">Close</button>
+
+</div>
 </body>
 </html>
+
+
+<script>
+
+function showQR() {
+
+  function closeModal(id) {
+  const modal = document.getElementById(id);
+  if (modal) {
+    modal.style.display = 'none';
+  }
+}
+  const modal = document.getElementById('qr-modal');
+  const img = document.getElementById('qr-img');
+
+  if (!modal || !img) {
+    alert("QR modal not found ❌");
+    return;
+  }
+
+  modal.style.display = 'flex'; // popup open
+
+  img.src = '/api/qr?t=' + Date.now(); // QR load
+}
+let templates = [];
+
+// LOAD TEMPLATES
+// ================= TEMPLATE LOAD =================
+async function loadTemplates() {
+  const res = await fetch('/api/templates');
+  const data = await res.json();
+
+  const select = document.getElementById('template-select');
+  if (!select) return;
+
+  select.innerHTML = '<option value="">Select Template</option>';
+
+  data.templates.forEach(t => {
+    const option = document.createElement('option');
+    option.value = t.id;
+    option.textContent = t.name;
+    select.appendChild(option);
+  });
+}
+
+// ================= AUTO FILL MESSAGE =================
+document.addEventListener('DOMContentLoaded', () => {
+  const select = document.getElementById('template-select');
+
+  if (select) {
+    select.addEventListener('change', async function () {
+      const id = this.value;
+      if (!id) return;
+
+      const res = await fetch('/api/templates/' + id);
+      const data = await res.json();
+
+      document.getElementById('message-text').value = data.message;
+    });
+  }
+});
+
+// ================= SEND WHATSAPP =================
+async function sendMessage() {
+  try {
+    let number = document.getElementById("number").value;
+
+    if (!number.includes("@")) {
+      number = number + "@s.whatsapp.net";
+  }
+    const message = document.getElementById('message').value;
+
+    const res = await fetch('/api/send-message', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ number, message })
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      alert("Message Sent ✅");
+    } else {
+      alert("Error: " + (data.error || "Failed"));
+    }
+
+  } catch (err) {
+    alert("Error: " + err.message);
+  }
+}
+
+async function onTemplateChange(id) {
+  if (!id) return;
+
+  console.log("Template selected:", id); // debug
+
+  const res = await fetch('/api/templates/' + id);
+  const t = await res.json();
+
+  console.log("Template data:", t); // debug
+
+  // message fill
+  document.getElementById('message-text').value = t.message || '';
+
+  // image show
+  const img = document.getElementById('template-image');
+
+  if (t.image) {
+    img.src = t.image;
+    img.style.display = 'block';
+  } else {
+    img.style.display = 'none';
+  }
+}
+
+function loadTemplate(type) {
+  if (type === 'reminder') {
+    document.getElementById('message').value = "⚠ Reminder: Scan Pending\nPlease complete your scan.";
+  }
+
+  if (type === 'alert') {
+    document.getElementById('message').value = "🚨 Alert\nImmediate action required.";
+  }
+}
+</script>
+
+

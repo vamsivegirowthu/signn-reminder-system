@@ -1,0 +1,12 @@
+[
+  { "id": "1", "name": "Morning Reminder", "message": "Good morning! Please complete your scan." },
+  { "id": "2", "name": "Follow Up", "message": "Reminder: scan pending." },
+  { "id": "3", "name": "Payment Reminder", "message": "Please clear pending payment." },
+  { "id": "4", "name": "Meeting Reminder", "message": "You have a meeting today." },
+  { "id": "5", "name": "Shift Start", "message": "Your shift has started." },
+  { "id": "6", "name": "Shift End", "message": "Your shift has ended." },
+  { "id": "7", "name": "Report Submission", "message": "Submit your report." },
+  { "id": "8", "name": "Task Assigned", "message": "New task assigned." },
+  { "id": "9", "name": "Alert Message", "message": "Important alert!" },
+  { "id": "10", "name": "Custom Message", "message": "Custom template message." }
+]
