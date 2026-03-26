@@ -436,20 +436,6 @@ select.form-input{cursor:pointer}
 <!-- WA SESSIONS -->
 <div class="page" id="page-sessions">
 
-  <h2>Reminder Templates</h2>
-
-  <input id="temp-name" placeholder="Template Name" />
-  <br><br>
-
-  <textarea id="temp-message" placeholder="Message"></textarea>
-  <br><br>
-
-  <button onclick="saveTemplate()">Save Template</button>
-
-  <hr>
-
-  <div id="template-list"></div>
-
   <!-- HEADER FIRST -->
   <div class="page-hdr-row page-header">
     <div>
@@ -543,6 +529,35 @@ select.form-input{cursor:pointer}
   </div>
 
 </div>
+  
+ <!-- TEMPLATES PAGE -->
+<div class="page" id="page-templates">
+
+  <div class="page-header">
+    <div class="page-heading">Reminder Templates</div>
+    <div class="page-sub">Manage your templates</div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+
+      <input id="temp-name" class="form-input" placeholder="Template Name" />
+      <br><br>
+
+      <textarea id="temp-message" class="form-input" placeholder="Message"></textarea>
+      <br><br>
+
+      <button class="btn btn-primary" onclick="saveTemplate()">Save Template</button>
+
+      <hr><br>
+
+      <div id="template-list"></div>
+
+    </div>
+  </div>
+
+</div>
+  
 
 <!-- REPORTS -->
 <div class="page" id="page-reports">
