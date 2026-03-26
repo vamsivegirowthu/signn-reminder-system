@@ -47,7 +47,7 @@ const tempScheduler = {
   io: null,
 };
 
-const PORT = parseInt(process.env.DASHBOARD_PORT || '3000');
+const PORT = parseInt(process.env.PORT || '3000');
 const { httpServer, io } = createDashboardServer({ scheduler: tempScheduler, tracker, clinicData, logger });
 httpServer.listen(PORT, () => logger.info(`🖥️  Dashboard → http://localhost:${PORT}`));
 
