@@ -2,10 +2,10 @@
   "name": "signn-reminder-system",
   "version": "1.0.0",
   "description": "Signn Readiness Scan Morning Reminder Automation via WhatsApp",
-  "main": "src/index.js",
+  "main": "src/dashboard-server.js",
   "type": "module",
   "scripts": {
-    "main": "src/dashboard-server.js",
+    "start": "node src/dashboard-server.js"
   },
   "dependencies": {
     "@whiskeysockets/baileys": "^6.7.9",
