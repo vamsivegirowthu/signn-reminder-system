@@ -1890,7 +1890,9 @@ async function loadTemplates() {
           list.appendChild(div);
         }); 
       } 
-    } catch (err) {
+    } 
+    
+    catch (err) {
     console.error("Template error:", err);
   }
 }
