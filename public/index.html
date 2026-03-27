@@ -1933,6 +1933,44 @@ async function onTemplateChange(id) {
   }
 }
 
+  async function sendWhatsApp() {
+  const number = document.getElementById('wa-number').value;
+  const message = document.getElementById('message-text').value;
+
+  console.log("Sending:", number, message);
+
+  if (!number || !message) {
+    alert("Enter number and message");
+    return;
+  }
+
+  try {
+    const res = await fetch('/api/send-message', {   // ⚠️ check backend
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        number: number,
+        message: message
+      })
+    });
+
+    const data = await res.json();
+    console.log("Response:", data);
+
+    if (data.success) {
+      alert("✅ Message sent!");
+    } else {
+      alert("❌ Failed: " + (data.error || "Unknown error"));
+    }
+
+  } catch (err) {
+    console.error("Send error:", err);
+    alert("❌ Error sending message");
+  }
+}
+
 
 // ================= IMAGE + POPUP =================
 
