@@ -1710,17 +1710,7 @@ async function sendMessage() {
 }   // loadTemplates close
 
     // ✅ VERY IMPORTANT
-let selectedImage = '';
 
-function selectImage(img) {
-  selectedImage = window.location.origin + img.getAttribute('src');
-
-  const preview = document.getElementById('selected-image');
-  preview.src = selectedImage;
-  preview.style.display = 'block';
-}
-
-function openTemplatePopup(img, subject, message) {
   // popup open
   document.getElementById('popup').style.display = 'block';
 
@@ -1945,29 +1935,24 @@ async function onTemplateChange(id) {
   }
 
   try {
-    const res = await fetch('/api/send-message', {   // ⚠️ check backend
+    const res = await fetch('/api/send', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        number: number,
-        message: message
-      })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ number, message })
     });
 
     const data = await res.json();
-    console.log("Response:", data);
+    console.log(data);
 
     if (data.success) {
       alert("✅ Message sent!");
     } else {
-      alert("❌ Failed: " + (data.error || "Unknown error"));
+      alert("❌ Failed: " + data.error);
     }
 
   } catch (err) {
-    console.error("Send error:", err);
-    alert("❌ Error sending message");
+    console.error(err);
+    alert("❌ Error sending");
   }
 }
 
