@@ -1827,13 +1827,6 @@ function loadTemplateDropdown(templates) {
   if (!Array.isArray(templates)) return;
 
 templates.forEach(t => {
-  // dropdown kosam
-  const option = document.createElement('option');
-  option.value = t.id;
-  option.textContent = t.name || 'Unnamed';
-  dropdown.appendChild(option);
-
-  // list display kosam
   const div = document.createElement('div');
 
   div.innerHTML = `
@@ -1843,12 +1836,12 @@ templates.forEach(t => {
     </div>
   `;
 
-  // ✅ click event
+  // ✅ ADD THIS (MAIN FIX)
   div.onclick = () => {
     document.getElementById('templateName').innerText = t.name;
     document.getElementById('templateImage').src = t.image || "";
 
-    selectedImage = t.image || "";   // 🔥 MAIN FIX
+    selectedImage = t.image || "";   // 🔥 VERY IMPORTANT
 
     document.getElementById('message-text').value = t.message || "";
 
@@ -1857,7 +1850,6 @@ templates.forEach(t => {
 
   list.appendChild(div);
 });
-
 // ================= TEMPLATES =================
 
 async function loadTemplates() {
@@ -1953,7 +1945,7 @@ async function onTemplateChange(id) {
   const message = document.getElementById('message-text').value;
 
   if (!number || !message) {
-    alert('Number and message ivvali');
+    alert('Enter number and message');
     return;
   }
 
@@ -1964,13 +1956,11 @@ async function onTemplateChange(id) {
     },
     body: JSON.stringify({
       number: number,
-      message: message,
-      image: selectedImage   // ✅ optional
+      message: message
     })
   })
   .then(res => res.json())
   .then(data => {
-    console.log(data);
     alert('Message Sent ✅');
   })
   .catch(err => {
@@ -1978,7 +1968,6 @@ async function onTemplateChange(id) {
     alert('Error ❌');
   });
 }
-
 // ================= IMAGE + POPUP =================
 
 function selectImage(img) {
