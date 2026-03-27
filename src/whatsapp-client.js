@@ -47,6 +47,9 @@ class WhatsAppClient {
       logger: silentLogger,
       auth: state,
 
+        printQRInTerminal: true,   // ✅ ADD THIS LINE
+
+
       browser: ['Signn Reminder', 'Chrome', '1.0.0'],
 
       connectTimeoutMs: 60000,
@@ -56,59 +59,37 @@ class WhatsAppClient {
       maxRetries: 5
     });
 
-    this.sock.ev.on('creds.update', saveCreds);
+      // ❌ DISCONNECT HANDLING (FIXED)
+     this.sock.ev.on('creds.update', saveCreds);
 
-      // ✅ QR
-      this.sock.ev.on('connection.update', (update) => {
-  const { connection, qr } = update;
+this.sock.ev.on('connection.update', (update) => {
+  const { connection, lastDisconnect, qr } = update;
 
   if (qr) {
-    console.log("QR RECEIVED ✅");
     this.qrCode = qr;
-    global.latestQR = qr; 
-    
-    if (this.onQR) this.onQR(qr);// 🔥 IMPORTANT
+    global.latestQR = qr;
+    if (this.onQR) this.onQR(qr);
   }
 
   if (connection === 'open') {
-    console.log("WhatsApp Connected ✅");
-    this.connected = true;
+    this.isConnected = true;
+    this.qrCode = null;
     if (this.onReady) this.onReady();
+    this.processQueue();
   }
 
   if (connection === 'close') {
-    console.log("WhatsApp Disconnected ❌");
-    this.connected = false;
+    const statusCode = new Boom(lastDisconnect?.error)?.output?.statusCode;
+
+    this.isConnected = false;
+
+    if (statusCode === DisconnectReason.loggedOut) {
+      if (this.onDisconnect) this.onDisconnect('logged_out');
+    } else {
+      setTimeout(() => this.initialize(), 3000);
+    }
   }
 });
-
-      // ❌ DISCONNECT HANDLING (FIXED)
-      if (connection === 'close') {
-        const statusCode = new Boom(lastDisconnect?.error)?.output?.statusCode;
-
-        this.logger.warn(`⚠️ Connection closed. Code: ${statusCode}`);
-        this.isConnected = false;
-
-        if (statusCode === DisconnectReason.loggedOut) {
-          this.logger.error('❌ Logged out from WhatsApp!');
-          if (this.onDisconnect) this.onDisconnect('logged_out');
-        } else {
-          this.logger.info('🔄 Reconnecting in 3 seconds...');
-          setTimeout(() => this.initialize(), 3000);
-        }
-      }
-
-      // ✅ CONNECTED
-      else if (connection === 'open') {
-        this.isConnected = true;
-        this.qrCode = null;
-
-        this.logger.info('✅ WhatsApp connected!');
-        if (this.onReady) this.onReady();
-
-        this.processQueue();
-      }
-    });
 
     return this;
   }
