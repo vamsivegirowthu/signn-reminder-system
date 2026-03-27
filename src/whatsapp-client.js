@@ -23,19 +23,25 @@ class WhatsAppClient {
     this.processing = false;
   }
 
-  async initialize() {
+async initialize() {
 
-    // 🔥 FIX: clean old socket (avoid conflicts)
-    if (this.sock) {
-      try {
-        await this.sock.logout();
-      } catch {}
-      this.sock = null;
-    }
+  // 🔥 ADD THIS HERE (VERY TOP)
+  if (fs.existsSync(SESSION_DIR)) {
+    fs.rmSync(SESSION_DIR, { recursive: true, force: true });
+    console.log("🗑️ Old session deleted");
+  }
 
-    if (!fs.existsSync(SESSION_DIR)) {
-      fs.mkdirSync(SESSION_DIR, { recursive: true });
-    }
+  // 🔥 FIX: clean old socket (avoid conflicts)
+  if (this.sock) {
+    try {
+      await this.sock.logout();
+    } catch {}
+    this.sock = null;
+  }
+
+  if (!fs.existsSync(SESSION_DIR)) {
+    fs.mkdirSync(SESSION_DIR, { recursive: true });
+  }
 
     const { state, saveCreds } = await useMultiFileAuthState(SESSION_DIR);
     const { version } = await fetchLatestBaileysVersion();
