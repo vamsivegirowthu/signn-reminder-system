@@ -846,7 +846,7 @@ async function loadTemplates() {
 
   const templates = Array.isArray(data) ? data : data.templates;
 
-  templates.forEach(t => {
+  data.forEach(t => {
     const div = document.createElement('div');
 
     div.innerHTML = `
