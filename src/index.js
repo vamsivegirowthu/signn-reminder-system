@@ -33,6 +33,11 @@ tracker.initializeClinics(clinicData.clinics);
 
 const waClient = new WhatsAppClient(logger);
 
+waClient.onQR = qr => {
+  global.latestQR = qr;
+  console.log("QR SET SUCCESS ✅");
+};
+
 // ✅ FIXED TEMP SCHEDULER
 const tempScheduler = {
   wa: waClient,   // 🔥 FIX
