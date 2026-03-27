@@ -937,6 +937,75 @@ async function fetchSummary() {
   } catch(err) { console.error(err); }
 }
 
+  function renderMessageLogs() {
+  const tbody = document.getElementById('messages-tbody');
+  const filter = document.getElementById('msg-filter')?.value || '';
+
+  const logs = activityLog.filter(e =>
+    !filter || (e.message && e.message.toLowerCase().includes(filter))
+  );
+
+  if (!logs.length) {
+    tbody.innerHTML = `<tr><td colspan="5">No message logs yet</td></tr>`;
+    return;
+  }
+
+  // ✅ GROUP BY DAY
+  const grouped = {};
+
+  logs.forEach(e => {
+    const day = new Date(e.time).toLocaleDateString('en-US', {
+      weekday: 'long'
+    });
+
+    if (!grouped[day]) grouped[day] = [];
+    grouped[day].push(e);
+  });
+
+  tbody.innerHTML = '';
+
+  Object.keys(grouped).forEach(day => {
+
+    // Day Header
+    const header = document.createElement('tr');
+    header.innerHTML = `
+      <td colspan="5" style="background:#f1f5f9;font-weight:bold">
+        📅 ${day}
+      </td>
+    `;
+    tbody.appendChild(header);
+
+    // Logs
+    grouped[day].forEach(e => {
+      const time = new Date(e.time).toLocaleTimeString();
+
+      const type =
+        e.message?.toLowerCase().includes('morning') ? 'Morning' :
+        e.message?.toLowerCase().includes('follow') ? 'Follow-up' :
+        e.message?.toLowerCase().includes('alert') ? 'Alert' :
+        'Message';
+
+      const status =
+        e.level === 'error'
+          ? '<span class="badge badge-red">failed</span>'
+          : '<span class="badge badge-green">delivered</span>';
+
+      const row = document.createElement('tr');
+
+      row.innerHTML = `
+        <td>${e.recipient || '-'}</td>
+        <td>${e.clinic || '-'}</td>
+        <td><span class="badge badge-blue">${type}</span></td>
+        <td style="color:var(--muted);font-size:.78rem">${time}</td>
+        <td>${status}</td>
+      `;
+
+      tbody.appendChild(row);
+    });
+
+  });
+}
+
 async function loadClinics() {
   try {
     clinicsData = await (await fetch('/api/clinics')).json();
@@ -1307,23 +1376,70 @@ async function sendIndividualReminder(empId, clinicId) {
 function renderMessageLogs() {
   const tbody = document.getElementById('messages-tbody');
   const filter = document.getElementById('msg-filter')?.value || '';
-  const logs = activityLog.filter(e => !filter || e.message.toLowerCase().includes(filter));
+
+  const logs = activityLog.filter(e =>
+    !filter || (e.message && e.message.toLowerCase().includes(filter))
+  );
+
   if (!logs.length) {
-    tbody.innerHTML = `<tr><td colspan="5"><div class="empty"><div class="empty-icon">◻</div><div class="empty-sub">No message logs yet</div></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5">No message logs yet</td></tr>`;
     return;
   }
-  tbody.innerHTML = logs.slice(0,50).map(e => {
-    const t = new Date(e.time).toLocaleString('en-IN',{hour:'2-digit',minute:'2-digit',month:'short',day:'numeric'});
-    const type = e.message.includes('morning')||e.message.includes('Morning') ? 'first reminder' : e.message.includes('follow')||e.message.includes('Follow') ? 'follow-up' : e.message.includes('supervisor')||e.message.includes('Supervisor') ? 'supervisor alert' : 'info';
-    const status = e.level==='error' ? `<span class="badge badge-red">failed</span>` : `<span class="badge badge-green">delivered</span>`;
-    return `<tr>
-      <td style="font-weight:500">${e.message.substring(0,30)}...</td>
-      <td>—</td>
-      <td><span class="badge badge-blue">${type}</span></td>
-      <td style="color:var(--muted);font-size:.78rem">${t}</td>
-      <td>${status}</td>
-    </tr>`;
-  }).join('');
+
+  // ✅ GROUP BY DAY
+  const grouped = {};
+
+  logs.forEach(e => {
+    const day = new Date(e.time).toLocaleDateString('en-US', {
+      weekday: 'long'
+    });
+
+    if (!grouped[day]) grouped[day] = [];
+    grouped[day].push(e);
+  });
+
+  tbody.innerHTML = '';
+
+  Object.keys(grouped).forEach(day => {
+
+    // Day heading
+    const header = document.createElement('tr');
+    header.innerHTML = `
+      <td colspan="5" style="background:#f1f5f9;font-weight:bold">
+        📅 ${day}
+      </td>
+    `;
+    tbody.appendChild(header);
+
+    // Logs inside
+    grouped[day].forEach(e => {
+      const time = new Date(e.time).toLocaleTimeString();
+
+      const type =
+        e.message?.toLowerCase().includes('morning') ? 'Morning' :
+        e.message?.toLowerCase().includes('follow') ? 'Follow-up' :
+        e.message?.toLowerCase().includes('alert') ? 'Alert' :
+        'Message';
+
+      const status =
+        e.level === 'error'
+          ? '<span class="badge badge-red">failed</span>'
+          : '<span class="badge badge-green">delivered</span>';
+
+      const row = document.createElement('tr');
+
+      row.innerHTML = `
+        <td>${e.recipient || '-'}</td>
+        <td>${e.clinic || '-'}</td>
+        <td><span class="badge badge-blue">${type}</span></td>
+        <td style="color:var(--muted);font-size:.78rem">${time}</td>
+        <td>${status}</td>
+      `;
+
+      tbody.appendChild(row);
+    });
+
+  });
 }
 
 // ── WA SESSIONS ───────────────────────────────────────────────────────────────
@@ -1658,6 +1774,24 @@ background:white; padding:20px; border-radius:10px; z-index:1000; width:350px;">
 
 
 <script>
+
+  function groupByDay(logs) {
+  const grouped = {};
+
+  logs.forEach(log => {
+    const day = new Date(log.time).toLocaleDateString('en-US', {
+      weekday: 'long'
+    });
+
+    if (!grouped[day]) {
+      grouped[day] = [];
+    }
+
+    grouped[day].push(log);
+  });
+
+  return grouped;
+}
 
   let selectedImage = "";
 
