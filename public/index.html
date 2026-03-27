@@ -1689,7 +1689,7 @@ async function sendMessage() {
   }
     const message = document.getElementById('message').value;
 
-    const res = await fetch('/api/send-message', {
+    const res = await fetch('/api/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ number, message })
