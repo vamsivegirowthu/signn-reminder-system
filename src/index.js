@@ -61,10 +61,6 @@ httpServer.listen(PORT, '0.0.0.0', () => {
 logger.info('🔐 Initializing WhatsApp...');
 logger.info('📱 Open dashboard to scan QR code');
 
-waClient.onQR = qr => {
-  global.latestQR = qr;
-  io.emit('qr_update', { qr });
-};
 
 waClient.onReady = async () => {
   io.emit('wa_connected', { time: new Date().toISOString() });
