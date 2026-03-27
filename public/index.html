@@ -860,31 +860,36 @@ async function loadTemplates() {
 
     if (!Array.isArray(templates)) templates = [];
 
-   loadTemplateDropdown(templates);
+    loadTemplateDropdown(templates);
 
     const list = document.getElementById('template-list');
 
-    if (list) {
-      list.innerHTML = '';
+    if (!list) return;
 
-      if (templates.length === 0) {
-        list.innerHTML = `<p>No templates found</p>`;
-      } else {
-        templates.forEach(t => {
-          const div = document.createElement('div');
+    list.innerHTML = '';
 
-          div.innerHTML = `
-            <div style="padding:10px;border-bottom:1px solid #eee">
-              <b>${t.name || 'No Name'}</b><br>
-              ${t.message || ''}
-            </div>
-          `;
-
-          list.appendChild(div);
-        });
-      }
+    if (templates.length === 0) {
+      list.innerHTML = `<p>No templates found</p>`;
+      return;
     }
 
+    templates.forEach(t => {
+      const div = document.createElement('div');
+
+      div.innerHTML = `
+        <div style="padding:10px;border-bottom:1px solid #eee">
+          <b>${t.name || 'No Name'}</b><br>
+          ${t.message || ''}
+        </div>
+      `;
+
+      list.appendChild(div);
+    });
+
+  } catch (err) {
+    console.error("Template error:", err);
+  }
+}
 
 // ── DATA FETCH ───────────────────────────────────────────────────────────────
 async function fetchAll() {
@@ -1512,30 +1517,56 @@ function sendWhatsApp() {
   });
 }
 
-async function onTemplateChange(id) {
-  if (!id) return;
-
+async function loadTemplates() {
   try {
-    const res = await fetch('/api/templates/' + id);
-    const t = await res.json();
+    const res = await fetch('/api/templates');
 
-    console.log("Template:", t);
+    if (!res.ok) {
+      throw new Error("API failed: " + res.status);
+    }
 
-    // message fill
-    document.getElementById('message-text').value = t.message || '';
+    const data = await res.json();
+    console.log("Templates API:", data);
 
-    // image show
-    const img = document.getElementById('template-image');
+    let templates = [];
 
-    if (t.image) {
-      img.src = t.image;
-      img.style.display = 'block';
-    } else {
-      img.style.display = 'none';
+    if (Array.isArray(data)) {
+      templates = data;
+    } else if (Array.isArray(data.templates)) {
+      templates = data.templates;
+    } else if (Array.isArray(data.data)) {
+      templates = data.data;
+    }
+
+    if (!Array.isArray(templates)) templates = [];
+
+    loadTemplateDropdown(templates);
+
+    const list = document.getElementById('template-list');
+
+    if (list) {
+      list.innerHTML = '';
+
+      if (templates.length === 0) {
+        list.innerHTML = `<p>No templates found</p>`;
+      } else {
+        templates.forEach(t => {
+          const div = document.createElement('div');
+
+          div.innerHTML = `
+            <div style="padding:10px;border-bottom:1px solid #eee">
+              <b>${t.name || 'No Name'}</b><br>
+              ${t.message || ''}
+            </div>
+          `;
+
+          list.appendChild(div);
+        });
+      }
     }
 
   } catch (err) {
-    console.error(err);
+    console.error("Template error:", err);
   }
 }
 </script>
