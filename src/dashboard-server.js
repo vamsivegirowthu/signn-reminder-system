@@ -140,3 +140,34 @@ export function createDashboardServer({ scheduler, tracker, clinicData, logger }
 
   return { httpServer, io, app };
 }
+
+return { httpServer, io, app };
+}
+
+
+// 🔥 START SERVER (VERY IMPORTANT)
+
+const PORT = process.env.PORT || 3000;
+
+// dummy objects (Railway crash avoid cheyyadaniki)
+const scheduler = {
+  wa: {
+    sendMessage: async () => {},
+    isConnected: false
+  }
+};
+
+const tracker = {};
+const clinicData = {};
+const logger = console;
+
+const { httpServer } = createDashboardServer({
+  scheduler,
+  tracker,
+  clinicData,
+  logger
+});
+
+httpServer.listen(PORT, () => {
+  console.log("Server running on port " + PORT);
+});
