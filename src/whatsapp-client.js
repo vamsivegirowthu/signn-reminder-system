@@ -61,11 +61,26 @@ class WhatsAppClient {
       const { connection, lastDisconnect, qr } = update;
 
       // ✅ QR
-      if (qr) {
-        this.qrCode = qr;
-        this.logger.info('📱 QR Code generated');
-        if (this.onQR) this.onQR(qr);
-      }
+      this.sock.ev.on('connection.update', (update) => {
+  const { connection, qr } = update;
+
+  if (qr) {
+    console.log("QR RECEIVED ✅");
+    this.qrCode = qr;
+    global.latestQR = qr;   // 🔥 IMPORTANT
+  }
+
+  if (connection === 'open') {
+    console.log("WhatsApp Connected ✅");
+    this.connected = true;
+    if (this.onReady) this.onReady();
+  }
+
+  if (connection === 'close') {
+    console.log("WhatsApp Disconnected ❌");
+    this.connected = false;
+  }
+});
 
       // ❌ DISCONNECT HANDLING (FIXED)
       if (connection === 'close') {
