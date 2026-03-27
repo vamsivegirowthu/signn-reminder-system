@@ -28,11 +28,7 @@ async initialize() {
     console.log("🚀 Starting WhatsApp init...");
 
     // 🗑️ delete old session (ONLY TEMP)
-    if (fs.existsSync(SESSION_DIR)) {
-      fs.rmSync(SESSION_DIR, { recursive: true, force: true });
-      console.log("🗑️ Old session deleted");
-    }
-
+   
     // clean old socket
     if (this.sock) {
       try {
