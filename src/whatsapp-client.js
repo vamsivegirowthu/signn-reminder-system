@@ -47,8 +47,6 @@ class WhatsAppClient {
       logger: silentLogger,
       auth: state,
 
-        printQRInTerminal: true,   // ✅ ADD THIS LINE
-
 
       browser: ['Signn Reminder', 'Chrome', '1.0.0'],
 
@@ -64,38 +62,42 @@ class WhatsAppClient {
 
 this.sock.ev.on('connection.update', (update) => {
 
-  // ✅ ADD THIS LINE HERE (TOP)
-  console.log("FULL UPDATE:", JSON.stringify(update, null, 2));
+  console.log("UPDATE EVENT:", update);
 
   const { connection, lastDisconnect, qr } = update;
 
-if (qr) {
-  console.log("🔥 QR GENERATED"); // ADD
-  this.qrCode = qr;
-  global.latestQR = qr;
+  // ✅ QR HANDLING
+  if (qr) {
+    console.log("🔥 QR GENERATED");
+    this.qrCode = qr;
+    global.latestQR = qr;
 
-  if (global.io) {
-    global.io.emit('qr_update');
+    if (global.io) {
+      global.io.emit('qr_update');
+    }
+
+    if (this.onQR) this.onQR(qr);
   }
-}
 
-  if (this.onQR) this.onQR(qr);
-}
+  // ✅ CONNECTION OPEN
   if (connection === 'open') {
     this.isConnected = true;
     this.qrCode = null;
+
     if (this.onReady) this.onReady();
+
     this.processQueue();
   }
 
+  // ✅ CONNECTION CLOSE
   if (connection === 'close') {
     let statusCode = null;
 
-try {
-  statusCode = new Boom(lastDisconnect?.error)?.output?.statusCode;
-} catch (e) {
-  console.log("Disconnect error parsing failed");
-}
+    try {
+      statusCode = new Boom(lastDisconnect?.error)?.output?.statusCode;
+    } catch (e) {
+      console.log("Disconnect error parsing failed");
+    }
 
     this.isConnected = false;
 
@@ -105,8 +107,8 @@ try {
       setTimeout(() => this.initialize(), 3000);
     }
   }
-});
 
+});
     return this;
   }
 
