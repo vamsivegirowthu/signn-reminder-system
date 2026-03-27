@@ -102,7 +102,13 @@ waClient.onDisconnect = reason => {
   logger.error('WhatsApp disconnected: ' + reason);
 };
 
-await waClient.initialize();
+(async () => {
+  try {
+    await waClient.initialize();
+  } catch (err) {
+    logger.error("WhatsApp init error:", err);
+  }
+})();
 
 process.on('SIGINT', async () => {
   logger.info('\n🛑 Shutting down...');
