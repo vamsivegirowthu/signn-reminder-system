@@ -46,6 +46,8 @@ class WhatsAppClient {
       version,
       logger: silentLogger,
       auth: state,
+
+      printQRInTerminal: true
       browser: ['Signn Reminder', 'Chrome', '1.0.0'],
 
       connectTimeoutMs: 60000,
