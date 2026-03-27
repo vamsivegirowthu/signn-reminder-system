@@ -71,7 +71,11 @@ export function createDashboardServer({ scheduler, tracker, clinicData, logger }
 
       const jid = number.replace(/\D/g, '') + '@s.whatsapp.net';
 
-      await scheduler.wa.sendMessage(jid, { text: message });
+     if (scheduler?.wa?.sendMessage) {
+  await scheduler.wa.sendMessage(jid, { text: message });
+} else {
+  console.log("WA not connected, skipping send");
+}
 
       res.json({ success: true });
     } catch (e) {
