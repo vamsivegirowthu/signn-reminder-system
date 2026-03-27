@@ -63,16 +63,21 @@ class WhatsAppClient {
      this.sock.ev.on('creds.update', saveCreds);
 
 this.sock.ev.on('connection.update', (update) => {
+
+  // ✅ ADD THIS LINE HERE (TOP)
+  console.log("FULL UPDATE:", JSON.stringify(update, null, 2));
+
   const { connection, lastDisconnect, qr } = update;
 
- if (qr) {
+if (qr) {
+  console.log("🔥 QR GENERATED"); // ADD
   this.qrCode = qr;
   global.latestQR = qr;
 
-  // 🔥 ADD THIS
   if (global.io) {
     global.io.emit('qr_update');
   }
+}
 
   if (this.onQR) this.onQR(qr);
 }
@@ -84,7 +89,13 @@ this.sock.ev.on('connection.update', (update) => {
   }
 
   if (connection === 'close') {
-    const statusCode = new Boom(lastDisconnect?.error)?.output?.statusCode;
+    let statusCode = null;
+
+try {
+  statusCode = new Boom(lastDisconnect?.error)?.output?.statusCode;
+} catch (e) {
+  console.log("Disconnect error parsing failed");
+}
 
     this.isConnected = false;
 
