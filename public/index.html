@@ -473,43 +473,7 @@ select.form-input{cursor:pointer}
       </div>
 
       <!-- IMAGE -->
-<div class="form-group">
-  <label class="form-label">Select Image</label>
 
-  <div style="display:flex;gap:10px;flex-wrap:wrap">
-
-  <img src="/images/alert.jpg" width="70"
-  onclick="openTemplatePopup(this, 'Alert', '🚨 Important alert\nImmediate action required')">
-
-  <img src="/images/custom.jpg" width="70"
-  onclick="openTemplatePopup(this, 'Custom', '✏ Custom message\nEnter your text')">
-
-  <img src="/images/end.jpg" width="70"
-  onclick="openTemplatePopup(this, 'Shift End', '⏰ Your shift has ended\nPlease logout properly')">
-
-  <img src="/images/followup.jpg" width="70"
-  onclick="openTemplatePopup(this, 'Follow Up', '📌 Follow up reminder\nPlease complete pending task')">
-
-  <img src="/images/meeting.jpg" width="70"
-  onclick="openTemplatePopup(this, 'Meeting', '📅 Meeting reminder\nPlease join on time')">
-
-  <img src="/images/morning.jpg" width="70"
-  onclick="openTemplatePopup(this, 'Morning', '🌅 Good morning!\nHave a great day')">
-
-  <img src="/images/payment.jpg" width="70"
-  onclick="openTemplatePopup(this, 'Payment', '💰 Payment reminder\nPlease complete your payment')">
-
-  <img src="/images/report.jpg" width="70"
-  onclick="openTemplatePopup(this, 'Report', '📊 Submit your report\nDeadline approaching')">
-
-  <img src="/images/start.jpg" width="70"
-  onclick="openTemplatePopup(this, 'Shift Start', '▶ Shift started\nHave a productive day')">
-
-  <img src="/images/task.jpg" width="70"
-  onclick="openTemplatePopup(this, 'Task', '📝 Task assigned\nPlease complete it')">
-  </div>
-
-</div>
 
   <br>
 
@@ -860,6 +824,8 @@ async function loadTemplates() {
 
     if (!Array.isArray(templates)) templates = [];
 
+    window._templates = templates;
+
     loadTemplateDropdown(templates);
 
     const list = document.getElementById('template-list');
@@ -889,6 +855,35 @@ async function loadTemplates() {
   } catch (err) {
     console.error("Template error:", err);
   }
+}
+
+
+  // ===== TEMPLATE DROPDOWN =====
+function loadTemplateDropdown(templates) {
+  const select = document.getElementById('template-select');
+
+  if (!select) return;
+
+  select.innerHTML = '<option value="">Select Template</option>';
+
+  templates.forEach(t => {
+    const opt = document.createElement('option');
+    opt.value = t.id;
+    opt.textContent = t.name;
+    select.appendChild(opt);
+  });
+}
+
+
+// ===== TEMPLATE SELECT CHANGE =====
+function onTemplateChange(id) {
+  const templates = window._templates || [];
+
+  const t = templates.find(x => x.id == id);
+
+  if (!t) return;
+
+  document.getElementById('message-text').value = t.message || '';
 }
 
 // ── DATA FETCH ───────────────────────────────────────────────────────────────
