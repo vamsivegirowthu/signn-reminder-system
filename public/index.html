@@ -1526,12 +1526,14 @@ async function loadTemplates() {
     let templates = [];
 
     if (Array.isArray(data)) {
-      templates = data;
-    } else if (Array.isArray(data.templates)) {
-      templates = data.templates;
-    } else if (Array.isArray(data.data)) {
-      templates = data.data;
-    }
+  templates = data;
+} else if (Array.isArray(data.templates)) {
+  templates = data.templates;
+} else if (data.templates && Array.isArray(data.templates.templates)) {
+  templates = data.templates.templates; // ✅ FIX
+} else if (Array.isArray(data.data)) {
+  templates = data.data;
+}
 
     if (!Array.isArray(templates)) templates = [];
 
