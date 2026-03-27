@@ -65,12 +65,17 @@ class WhatsAppClient {
 this.sock.ev.on('connection.update', (update) => {
   const { connection, lastDisconnect, qr } = update;
 
-  if (qr) {
-    this.qrCode = qr;
-    global.latestQR = qr;
-    if (this.onQR) this.onQR(qr);
+ if (qr) {
+  this.qrCode = qr;
+  global.latestQR = qr;
+
+  // 🔥 ADD THIS
+  if (global.io) {
+    global.io.emit('qr_update');
   }
 
+  if (this.onQR) this.onQR(qr);
+}
   if (connection === 'open') {
     this.isConnected = true;
     this.qrCode = null;
