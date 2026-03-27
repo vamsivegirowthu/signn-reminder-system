@@ -41,8 +41,8 @@ export function createDashboardServer({ scheduler, tracker, clinicData, logger }
   app.use(express.static(path.join(__dirname, '../public')));
 
   app.get('/', (req, res) => {
-  res.send('Server is running 🚀');
-});
+    res.send('Server is running 🚀');
+  });
 
   seedTemplates();
 
@@ -71,11 +71,11 @@ export function createDashboardServer({ scheduler, tracker, clinicData, logger }
 
       const jid = number.replace(/\D/g, '') + '@s.whatsapp.net';
 
-     if (scheduler?.wa?.sendMessage) {
-  await scheduler.wa.sendMessage(jid, { text: message });
-} else {
-  console.log("WA not connected, skipping send");
-}
+      if (scheduler?.wa?.sendMessage) {
+        await scheduler.wa.sendMessage(jid, { text: message });
+      } else {
+        console.log("WA not connected, skipping send");
+      }
 
       res.json({ success: true });
     } catch (e) {
@@ -91,7 +91,7 @@ export function createDashboardServer({ scheduler, tracker, clinicData, logger }
     });
   });
 
-  // ================= ✅ FIXED APIs =================
+  // ================= OTHER APIs =================
 
   app.get('/api/summary', (req, res) => {
     const clinics = loadClinics().clinics || [];
@@ -142,18 +142,14 @@ export function createDashboardServer({ scheduler, tracker, clinicData, logger }
     res.send(png);
   });
 
+  // ✅ IMPORTANT: return inside function
   return { httpServer, io, app };
 }
 
-return { httpServer, io, app };
-}
-
-
-// 🔥 START SERVER (VERY IMPORTANT)
+// ================= START SERVER (OUTSIDE FUNCTION) =================
 
 const PORT = process.env.PORT || 3000;
 
-// dummy objects (Railway crash avoid cheyyadaniki)
 const scheduler = {
   wa: {
     sendMessage: async () => {},
