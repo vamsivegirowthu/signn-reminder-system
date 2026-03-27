@@ -108,15 +108,7 @@ waClient.onDisconnect = reason => {
     await waClient.initialize();
 
 // 👇 ADD THIS BELOW
-setTimeout(() => {
-  const qr = waClient.getQRCode();
-  if (qr) {
-    global.latestQR = qr;
-    console.log("QR SET ✅");
-  } else {
-    console.log("QR NOT GENERATED ❌");
-  }
-}, 3000);
+
   } catch (err) {
     logger.error("WhatsApp init error:", err);
   }
