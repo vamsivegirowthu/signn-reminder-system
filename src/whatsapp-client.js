@@ -58,9 +58,6 @@ class WhatsAppClient {
 
     this.sock.ev.on('creds.update', saveCreds);
 
-    this.sock.ev.on('connection.update', (update) => {
-      const { connection, lastDisconnect, qr } = update;
-
       // ✅ QR
       this.sock.ev.on('connection.update', (update) => {
   const { connection, qr } = update;
@@ -68,7 +65,9 @@ class WhatsAppClient {
   if (qr) {
     console.log("QR RECEIVED ✅");
     this.qrCode = qr;
-    global.latestQR = qr;   // 🔥 IMPORTANT
+    global.latestQR = qr; 
+    
+    if (this.onQR) this.onQR(qr);// 🔥 IMPORTANT
   }
 
   if (connection === 'open') {
