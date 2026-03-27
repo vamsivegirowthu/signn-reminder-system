@@ -838,141 +838,53 @@ socket.on('scan_update', fetchSummary);
 socket.on('reset', () => { toast('↺ Day reset','info'); fetchSummary(); });
 
 async function loadTemplates() {
-  const res = await fetch('/api/templates');
-  const data = await res.json();
+  try {
+    const res = await fetch('/api/templates');
 
-  const list = document.getElementById('template-list');
-  list.innerHTML = '';
+    if (!res.ok) {
+      throw new Error("API failed: " + res.status);
+    }
 
-  const templates = Array.isArray(data) ? data : data.templates;
+    const data = await res.json();
+    console.log("Templates API:", data);
 
-  templates.forEach(t => {
-    const div = document.createElement('div');
+    let templates = [];
 
-    div.innerHTML = `
-      <div style="padding:10px;border-bottom:1px solid #eee">
-        <b>${t.name}</b><br>
-        ${t.message}
-      </div>
-    `;
+    if (Array.isArray(data)) {
+      templates = data;
+    } else if (Array.isArray(data.templates)) {
+      templates = data.templates;
+    } else if (Array.isArray(data.data)) {
+      templates = data.data;
+    }
 
-    list.appendChild(div);
-  });
+    if (!Array.isArray(templates)) templates = [];
 
-} // ✅ VERY IMPORTANT
-let selectedImage = '';
+   loadTemplateDropdown(templates);
 
-function selectImage(img) {
-  selectedImage = window.location.origin + img.getAttribute('src');
+    const list = document.getElementById('template-list');
 
-  const preview = document.getElementById('selected-image');
-  preview.src = selectedImage;
-  preview.style.display = 'block';
-}
+    if (list) {
+      list.innerHTML = '';
 
-function openTemplatePopup(img, subject, message) {
-  // popup open
-  document.getElementById('popup').style.display = 'block';
+      if (templates.length === 0) {
+        list.innerHTML = `<p>No templates found</p>`;
+      } else {
+        templates.forEach(t => {
+          const div = document.createElement('div');
 
-  // image set
-  document.getElementById('templateImage').src = img.src;
-  document.getElementById('templateImage').style.height = "180px";
-  document.getElementById('templateImage').style.width = "300px";
-  document.getElementById('templateImage').style.objectFit = "cover";
+          div.innerHTML = `
+            <div style="padding:10px;border-bottom:1px solid #eee">
+              <b>${t.name || 'No Name'}</b><br>
+              ${t.message || ''}
+            </div>
+          `;
 
-  // title set
-  document.getElementById('templateName').innerText = subject;
+          list.appendChild(div);
+        });
+      }
+    }
 
-  // message preview (WhatsApp style)
-  document.getElementById('previewBox').innerHTML = `
-  <div style="
-    background:#0f3d2e;
-    color:white;
-    padding:15px;
-    border-radius:12px;
-    width:300px;
-    height:180px;
-    display:flex;
-    flex-direction:column;
-    justify-content:space-between;
-  ">
-    
-    <div style="font-size:16px;font-weight:bold;">
-      ${subject}
-    </div>
-
-    <div style="margin-top:10px; overflow:hidden;">
-      ${message.replace(/\n/g, '<br>')}
-    </div>
-
-    <div style="margin-top:10px; overflow:hidden;">
-      📍 Name: User <br>
-      ⏰ Time: ${new Date().toLocaleTimeString()}
-    </div>
-
-    <div style="margin-top:10px; overflow:hidden;">
-      🚨 Please complete immediately
-    </div>
-
-  </div>
-`;
-}
-
-function closePopup() {
-  document.getElementById('popup').style.display = 'none';
-}
-
-async function sendFromPopup() {
-  let number = document.getElementById('popup-number').value;
-
-  if (!number.includes("@")) {
-    number = number + "@s.whatsapp.net";
-  }
-
-  const message = document.getElementById('previewBox').innerText;
-  const image = document.getElementById('templateImage').src;
-  const time = document.getElementById('popup-time').value;
-
-  const finalMessage = message + `\n\n⏰ Scheduled Time: ${time}`;
-
-  const res = await fetch('http://localhost:3000/api/send', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      number,
-      message: finalMessage,
-      image
-    })
-  });
-
-  const data = await res.json();
-
-  if (data.success) {
-    alert('✅ Sent');
-  } else {
-    alert('❌ Error: ' + data.error);
-    console.log(data);
-  }
-}
-
-  async function onTemplateChange(id) {
-  if (!id) return;
-
-  const res = await fetch('/api/templates/' + id);
-  const t = await res.json();
-
-  document.getElementById('message-text').value = t.message || '';
-
-  const img = document.getElementById('template-image');
-  if (t.image) {
-    img.src = t.image;
-    img.style.display = 'block';
-  } else {
-    img.style.display = 'none';
-  }
-}
 
 // ── DATA FETCH ───────────────────────────────────────────────────────────────
 async function fetchAll() {
@@ -1766,24 +1678,116 @@ async function sendMessage() {
   } catch (err) {
     alert("Error: " + err.message);
   }
+}   
+}   // loadTemplates close
+
+    // ✅ VERY IMPORTANT
+let selectedImage = '';
+
+function selectImage(img) {
+  selectedImage = window.location.origin + img.getAttribute('src');
+
+  const preview = document.getElementById('selected-image');
+  preview.src = selectedImage;
+  preview.style.display = 'block';
 }
 
-async function onTemplateChange(id) {
-  if (!id) return;
+function openTemplatePopup(img, subject, message) {
+  // popup open
+  document.getElementById('popup').style.display = 'block';
 
-  console.log("Template selected:", id); // debug
+  // image set
+  document.getElementById('templateImage').src = img.src;
+  document.getElementById('templateImage').style.height = "180px";
+  document.getElementById('templateImage').style.width = "300px";
+  document.getElementById('templateImage').style.objectFit = "cover";
+
+  // title set
+  document.getElementById('templateName').innerText = subject;
+
+  // message preview (WhatsApp style)
+  document.getElementById('previewBox').innerHTML = `
+  <div style="
+    background:#0f3d2e;
+    color:white;
+    padding:15px;
+    border-radius:12px;
+    width:300px;
+    height:180px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+  ">
+    
+    <div style="font-size:16px;font-weight:bold;">
+      ${subject}
+    </div>
+
+    <div style="margin-top:10px; overflow:hidden;">
+      ${message.replace(/\n/g, '<br>')}
+    </div>
+
+    <div style="margin-top:10px; overflow:hidden;">
+      📍 Name: User <br>
+      ⏰ Time: ${new Date().toLocaleTimeString()}
+    </div>
+
+    <div style="margin-top:10px; overflow:hidden;">
+      🚨 Please complete immediately
+    </div>
+
+  </div>
+`;
+}
+
+function closePopup() {
+  document.getElementById('popup').style.display = 'none';
+}
+
+async function sendFromPopup() {
+  let number = document.getElementById('popup-number').value;
+
+  if (!number.includes("@")) {
+    number = number + "@s.whatsapp.net";
+  }
+
+  const message = document.getElementById('previewBox').innerText;
+  const image = document.getElementById('templateImage').src;
+  const time = document.getElementById('popup-time').value;
+
+  const finalMessage = message + `\n\n⏰ Scheduled Time: ${time}`;
+
+  const res = await fetch('http://localhost:3000/api/send', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      number,
+      message: finalMessage,
+      image
+    })
+  });
+
+  const data = await res.json();
+
+  if (data.success) {
+    alert('✅ Sent');
+  } else {
+    alert('❌ Error: ' + data.error);
+    console.log(data);
+  }
+}
+
+  async function onTemplateChange(id) {
+  if (!id) return;
 
   const res = await fetch('/api/templates/' + id);
   const t = await res.json();
 
-  console.log("Template data:", t); // debug
-
-  // message fill
   document.getElementById('message-text').value = t.message || '';
 
-  // image show
   const img = document.getElementById('template-image');
-
   if (t.image) {
     img.src = t.image;
     img.style.display = 'block';
@@ -1792,14 +1796,137 @@ async function onTemplateChange(id) {
   }
 }
 
-function loadTemplate(type) {
-  if (type === 'reminder') {
-    document.getElementById('message').value = "⚠ Reminder: Scan Pending\nPlease complete your scan.";
-  }
+// 👇 ADD HERE
+// ✅ DROPDOWN FUNCTION
+function loadTemplateDropdown(templates) {
+  const dropdown = document.getElementById('template-select');
 
-  if (type === 'alert') {
-    document.getElementById('message').value = "🚨 Alert\nImmediate action required.";
+  if (!dropdown) return;
+
+  dropdown.innerHTML = `<option value="">Select Template</option>`;
+
+  if (!Array.isArray(templates)) return;
+
+  templates.forEach(t => {
+    const option = document.createElement('option');
+    option.value = t.id;
+    option.textContent = t.name || 'Unnamed';
+    dropdown.appendChild(option);
+  });
+}
+
+// ================= TEMPLATES =================
+
+async function loadTemplates() {
+  try {
+    const res = await fetch('/api/templates');
+
+    if (!res.ok) {
+      throw new Error("API failed: " + res.status);
+    }
+
+    const data = await res.json();
+
+    let templates = [];
+
+    if (Array.isArray(data)) templates = data;
+    else if (Array.isArray(data.templates)) templates = data.templates;
+    else if (Array.isArray(data.data)) templates = data.data;
+
+    if (!Array.isArray(templates)) templates = [];
+
+    loadTemplateDropdown(templates);
+
+    const list = document.getElementById('template-list');
+
+    if (list) {
+      list.innerHTML = '';
+
+      if (templates.length === 0) {
+        list.innerHTML = `<p>No templates found</p>`;
+      } else {
+        templates.forEach(t => {
+          const div = document.createElement('div');
+          div.innerHTML = `
+            <div style="padding:10px;border-bottom:1px solid #eee">
+              <b>${t.name || 'No Name'}</b><br>
+              ${t.message || ''}
+            </div>
+          `;
+          list.appendChild(div);
+        }); 
+      } 
+    }catch (err) {
+    console.error("Template error:", err);
   }
+}
+
+// ================= DROPDOWN =================
+
+function loadTemplateDropdown(templates) {
+  const dropdown = document.getElementById('template-select');
+
+  if (!dropdown) return;
+
+  dropdown.innerHTML = `<option value="">Select Template</option>`;
+
+  if (!Array.isArray(templates)) return;
+
+  templates.forEach(t => {
+    const option = document.createElement('option');
+    option.value = t.id;
+    option.textContent = t.name || 'Unnamed';
+    dropdown.appendChild(option);
+  });
+}
+}
+// ================= TEMPLATE CHANGE =================
+
+async function onTemplateChange(id) {
+  if (!id) return;
+
+  try {
+    const res = await fetch('/api/templates/' + id);
+    const t = await res.json();
+
+    document.getElementById('message-text').value = t.message || '';
+
+    const img = document.getElementById('template-image');
+
+    if (t.image) {
+      img.src = t.image;
+      img.style.display = 'block';
+    } else {
+      img.style.display = 'none';
+    }
+
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+
+// ================= IMAGE + POPUP =================
+
+function selectImage(img) {
+  const preview = document.getElementById('selected-image');
+  preview.src = img.src;
+  preview.style.display = 'block';
+}
+
+function openTemplatePopup(img, subject, message) {
+  document.getElementById('popup').style.display = 'block';
+  document.getElementById('templateImage').src = img.src;
+  document.getElementById('templateName').innerText = subject;
+  document.getElementById('previewBox').innerHTML = message;
+}
+
+function closePopup() {
+  document.getElementById('popup').style.display = 'none';
+}
+
+async function sendFromPopup() {
+  // keep your existing logic if needed
 }
 </script>
 
