@@ -135,12 +135,21 @@ export function createDashboardServer({ scheduler, tracker, clinicData, logger }
   // ================= QR =================
 
   app.get('/api/qr', async (req, res) => {
-    if (!global.latestQR) return res.status(404).json({ error: 'No QR' });
+  try {
+    if (!global.latestQR) {
+      return res.status(200).json({ error: 'No QR yet' });
+    }
 
     const png = await QRCode.toBuffer(global.latestQR);
+
     res.setHeader('Content-Type', 'image/png');
     res.send(png);
-  });
+
+  } catch (err) {
+    console.error("QR ERROR:", err);
+    res.status(500).json({ error: 'QR generation failed' });
+  }
+});
 
   // ✅ IMPORTANT: return inside function
   return { httpServer, io, app };
