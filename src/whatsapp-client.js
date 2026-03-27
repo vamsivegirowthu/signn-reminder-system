@@ -24,100 +24,78 @@ class WhatsAppClient {
   }
 
 async initialize() {
+  try {
+    console.log("🚀 Starting WhatsApp init...");
 
-  // 🔥 ADD THIS HERE (VERY TOP)
-  if (fs.existsSync(SESSION_DIR)) {
-    fs.rmSync(SESSION_DIR, { recursive: true, force: true });
-    console.log("🗑️ Old session deleted");
-  }
+    // 🗑️ delete old session (ONLY TEMP)
+    if (fs.existsSync(SESSION_DIR)) {
+      fs.rmSync(SESSION_DIR, { recursive: true, force: true });
+      console.log("🗑️ Old session deleted");
+    }
 
-  // 🔥 FIX: clean old socket (avoid conflicts)
-  if (this.sock) {
-    try {
-      await this.sock.logout();
-    } catch {}
-    this.sock = null;
-  }
+    // clean old socket
+    if (this.sock) {
+      try {
+        await this.sock.logout();
+      } catch {}
+      this.sock = null;
+    }
 
-  if (!fs.existsSync(SESSION_DIR)) {
-    fs.mkdirSync(SESSION_DIR, { recursive: true });
-  }
+    if (!fs.existsSync(SESSION_DIR)) {
+      fs.mkdirSync(SESSION_DIR, { recursive: true });
+    }
 
     const { state, saveCreds } = await useMultiFileAuthState(SESSION_DIR);
     const { version } = await fetchLatestBaileysVersion();
 
-    const silentLogger = pino({ level: 'silent' });
-
     this.sock = makeWASocket({
       version,
-      logger: silentLogger,
+      logger: pino({ level: 'silent' }),
       auth: state,
-
-
-      browser: ['Signn Reminder', 'Chrome', '1.0.0'],
-
-      connectTimeoutMs: 60000,
-      keepAliveIntervalMs: 20000,     // 🔥 improved
-      defaultQueryTimeoutMs: 60000,
-      retryRequestDelayMs: 2000,
-      maxRetries: 5
+      browser: ['Signn Reminder', 'Chrome', '1.0.0']
     });
 
-      // ❌ DISCONNECT HANDLING (FIXED)
-     this.sock.ev.on('creds.update', saveCreds);
+    this.sock.ev.on('creds.update', saveCreds);
 
-this.sock.ev.on('connection.update', (update) => {
+    this.sock.ev.on('connection.update', (update) => {
+      console.log("UPDATE EVENT:", update);
 
-  console.log("UPDATE EVENT:", update);
+      const { connection, qr } = update;
 
-  const { connection, lastDisconnect, qr } = update;
+      if (qr) {
+        console.log("🔥 QR GENERATED");
+        this.qrCode = qr;
+        global.latestQR = qr;
 
-  // ✅ QR HANDLING
-  if (qr) {
-    console.log("🔥 QR GENERATED");
-    this.qrCode = qr;
-    global.latestQR = qr;
+        if (global.io) {
+          global.io.emit('qr_update');
+        }
 
-    if (global.io) {
-      global.io.emit('qr_update');
-    }
+        if (this.onQR) this.onQR(qr);
+      }
 
-    if (this.onQR) this.onQR(qr);
+      if (connection === 'open') {
+        console.log("✅ WhatsApp Connected");
+        this.isConnected = true;
+        this.qrCode = null;
+
+        if (this.onReady) this.onReady();
+      }
+
+      if (connection === 'close') {
+        console.log("❌ Connection closed → retrying...");
+        this.isConnected = false;
+        setTimeout(() => this.initialize(), 3000);
+      }
+    });
+
+  } catch (err) {
+    console.error("❌ WhatsApp INIT ERROR:", err);
+    setTimeout(() => this.initialize(), 5000);
   }
 
-  // ✅ CONNECTION OPEN
-  if (connection === 'open') {
-    this.isConnected = true;
-    this.qrCode = null;
-
-    if (this.onReady) this.onReady();
-
-    this.processQueue();
-  }
-
-  // ✅ CONNECTION CLOSE
-  if (connection === 'close') {
-    let statusCode = null;
-
-    try {
-      statusCode = new Boom(lastDisconnect?.error)?.output?.statusCode;
-    } catch (e) {
-      console.log("Disconnect error parsing failed");
-    }
-
-    this.isConnected = false;
-
-    if (statusCode === DisconnectReason.loggedOut) {
-      if (this.onDisconnect) this.onDisconnect('logged_out');
-    } else {
-      setTimeout(() => this.initialize(), 3000);
-    }
-  }
-
-});
-    return this;
-  }
-
+  return this;
+}
   formatNumber(phone) {
     let number = phone.toString().replace(/\D/g, '');
     if (!number.startsWith('91') && number.length === 10) {
