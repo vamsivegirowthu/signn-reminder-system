@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import pino from 'pino';
 import fs from 'fs';
+import QRCode from 'qrcode';
 
 import WhatsAppClient from './whatsapp-client.js';
 import ScanTracker from './scan-tracker.js';
@@ -33,9 +34,20 @@ tracker.initializeClinics(clinicData.clinics);
 
 const waClient = new WhatsAppClient(logger);
 
-waClient.onQR = qr => {
-  global.latestQR = qr;
-  console.log("QR SET SUCCESS ✅");
+waClient.onQR = async (qr) => {
+  try {
+    const qrImage = await QRCode.toDataURL(qr); // 🔥 convert to image
+
+    global.latestQR = qrImage;
+
+    if (global.io) {
+      global.io.emit('qr', qrImage); // 🔥 send to frontend
+    }
+
+    console.log("QR SENT TO FRONTEND ✅");
+  } catch (err) {
+    console.error("QR error:", err);
+  }
 };
 
 // ✅ FIXED TEMP SCHEDULER
